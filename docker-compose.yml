@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+
+  # Proxies requests to internal services
+  reverse-proxy:
+    image: nginx:1.19.2
+    container_name: reverse_proxy
+    depends_on:
+        - webapp
+        - dog-picture-service
+    volumes:
+      - ./reverse_proxy/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+
+  # webapp
+  webapp:
+    image: junhuicoding/webapp
+    container_name: webapp
+    build:
+      context: ./webapp
+    depends_on:
+        - dog-picture-service
+    ports:
+      - 3000:3000
+    environment:
+        - NODE_ENV=development
+        - CHOKIDAR_USEPOLLING=true
+    volumes: 
+        - ./webapp:/var/app/
+        - /var/app/frontend/node_modules      
+    stdin_open: true
+    restart: on-failure
+
+
+  # Retrieves dog picture
+  dog-picture-service:
+    image: junhuicoding/dog-picture-service
+    container_name: dog-picture-service
+    build:
+      context: ./dog_picture_service
+    ports:
+      - 3001:3001
+    restart: on-failure
